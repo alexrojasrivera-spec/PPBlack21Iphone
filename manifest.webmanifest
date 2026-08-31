@@ -1,0 +1,18 @@
+{
+  "name": "Black 21 — Aprende Blackjack",
+  "short_name": "Black 21",
+  "description": "Aprende a jugar blackjack 21 contra la casa con un entrenador de estrategia básica.",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#084228",
+  "theme_color": "#084228",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

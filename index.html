@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#084228" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Black 21" />
+  <title>Black 21 — Aprende Blackjack</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Black <span class="pip">21</span></div>
+    <div class="bankroll" id="bankroll"><small>Saldo</small> $<span id="bankrollValue">1000</span></div>
+    <div style="display:flex;gap:6px">
+      <button class="iconbtn" id="btnChart" title="Estrategia">📋</button>
+      <button class="iconbtn" id="btnStats" title="Estadísticas">📊</button>
+      <button class="iconbtn" id="btnHelp" title="Cómo jugar">❓</button>
+    </div>
+  </header>
+
+  <main class="table">
+    <section class="dealer-zone">
+      <div class="zone-label">Crupier (la casa)</div>
+      <div class="hand-row"><div class="hand" id="dealerHand"><div class="cards"></div></div></div>
+    </section>
+
+    <div class="center-msg" id="centerMsg"></div>
+
+    <section class="player-zone">
+      <div class="zone-label">Tú</div>
+      <div class="hand-row" id="playerHands"></div>
+    </section>
+  </main>
+
+  <div class="coach" id="coach"></div>
+
+  <div class="controls" id="controls">
+    <!-- Se rellena dinámicamente según el estado -->
+  </div>
+
+  <!-- Modal genérico -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <script src="js/strategy.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
