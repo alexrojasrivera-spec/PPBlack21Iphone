@@ -1,5 +1,5 @@
 // Prueba visual: sirve la carpeta, abre la app en iPhone viewport,
-// juega un par de acciones y toma capturas.
+// activa el conteo, juega y toma capturas.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -25,22 +25,27 @@ const server = http.createServer((req, res) => {
   const errors = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message));
+  page.on('dialog', (d) => d.dismiss().catch(() => {}));
 
   await page.goto('http://localhost:4173/index.html', { waitUntil: 'networkidle' });
   await page.waitForTimeout(300);
-  await page.screenshot({ path: path.join(ROOT, 'tools/shot-1-bet.png') });
 
-  // Apostar $25 y repartir
+  // Activar conteo, apostar y repartir
+  await page.click('#countToggle');
   await page.click('.chip.c25');
   await page.click('#dealBtn');
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: path.join(ROOT, 'tools/shot-2-play.png') });
+  await page.waitForTimeout(700);
+  await page.screenshot({ path: path.join(ROOT, 'tools/shot-play.png') });
 
-  // Abrir tabla de estrategia
-  await page.click('#btnChart');
-  await page.waitForTimeout(200);
-  await page.screenshot({ path: path.join(ROOT, 'tools/shot-3-chart.png') });
-  await page.click('#modalClose');
+  // Pedir una carta para ver animación + conteo actualizado
+  const hitBtn = await page.$('#hitBtn');
+  if (hitBtn) { await hitBtn.click(); await page.waitForTimeout(600); }
+  await page.screenshot({ path: path.join(ROOT, 'tools/shot-hit.png') });
+
+  // Modal de conteo
+  await page.click('#btnCount');
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: path.join(ROOT, 'tools/shot-count.png') });
 
   console.log('Errores de consola:', errors.length ? errors : 'ninguno');
   await browser.close();

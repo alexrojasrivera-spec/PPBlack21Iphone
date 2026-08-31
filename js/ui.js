@@ -8,10 +8,12 @@
   const centerMsg = $('centerMsg');
 
   let coachOn = true;          // modo entrenador activado
+  let countOn = false;         // panel de conteo en vivo
   let pendingBet = 0;          // apuesta en construcción
   let lastBet = 25;            // repetir apuesta
 
   try { coachOn = localStorage.getItem('coach') !== 'off'; } catch (e) {}
+  try { countOn = localStorage.getItem('count') === 'on'; } catch (e) {}
 
   const A2L = { H: 'H', S: 'S', D: 'D', P: 'P' };
 
@@ -35,8 +37,21 @@
     const d = game.dealer;
     if (!d.cards || d.cards.length === 0) { setBadge(wrap, null); return; }
 
-    d.cards.forEach((c) => cardsDiv.appendChild(cardEl(c, false)));
-    if (d.hidden) cardsDiv.appendChild(cardEl(null, true));
+    d.cards.forEach((c, i) => {
+      const el = cardEl(c, false);
+      if (!c._shown) {
+        c._shown = true;
+        // La carta oculta recién revelada (índice 1) se voltea; el resto entra desde el zapato
+        if (i === 1 && !d.hidden) el.classList.add('flip-in');
+        else { el.classList.add('deal-in'); el.style.setProperty('--i', Math.max(0, i - 1)); }
+      }
+      cardsDiv.appendChild(el);
+    });
+    if (d.hidden) {
+      const back = cardEl(null, true);
+      if (!d._backShown) { d._backShown = true; back.classList.add('deal-in'); back.style.setProperty('--i', 1); }
+      cardsDiv.appendChild(back);
+    }
 
     if (d.hidden) {
       const upVal = Strategy.evaluateHand([d.cards[0]]).total;
@@ -63,7 +78,11 @@
       wrap.className = 'hand' + (game.state === 'playerTurn' && i === game.activeHand ? ' active' : '');
       const cardsDiv = document.createElement('div');
       cardsDiv.className = 'cards';
-      h.cards.forEach((c) => cardsDiv.appendChild(cardEl(c, false)));
+      h.cards.forEach((c, ci) => {
+        const el = cardEl(c, false);
+        if (!c._shown) { c._shown = true; el.classList.add('deal-in'); el.style.setProperty('--i', ci); }
+        cardsDiv.appendChild(el);
+      });
       wrap.appendChild(cardsDiv);
 
       const info = Strategy.evaluateHand(h.cards);
@@ -89,6 +108,8 @@
           o.className = 'hand-outcome ' + c;
           o.textContent = t;
           wrap.appendChild(o);
+          if (res.result === 'win' || res.result === 'blackjack') wrap.classList.add('result-win');
+          else if (res.result === 'lose') wrap.classList.add('result-lose');
         }
       }
       container.appendChild(wrap);
@@ -139,6 +160,37 @@
 
   function letterOf(action) { return A2L[action] || action; }
 
+  // ---------- Panel de conteo en vivo ----------
+  const hud = $('countHud');
+  function renderCountHud() {
+    if (!countOn || game.state === 'betting') { hud.className = 'count-hud'; return; }
+    const c = game.getCount();
+    const units = game.betUnitsFor(c.trueRounded);
+    const favorable = c.trueRounded >= 2;
+    let sug;
+    if (c.trueRounded >= 2) sug = `Conteo a tu favor: sube la apuesta (~${units} unidades).`;
+    else if (c.trueRounded <= -1) sug = 'Conteo en contra: apuesta el mínimo.';
+    else sug = 'Conteo neutro: apuesta base.';
+    hud.className = 'count-hud show';
+    hud.innerHTML = `
+      <div class="cvals">
+        <div class="cv rc"><b>${c.running > 0 ? '+' : ''}${c.running}</b><span>Corrido</span></div>
+        <div class="cv tc ${c.trueRounded < 0 ? 'neg' : ''}"><b>${c.trueRounded > 0 ? '+' : ''}${c.trueRounded}</b><span>Verdadero</span></div>
+        <div class="cv"><b>${c.decksLeft.toFixed(1)}</b><span>Barajas</span></div>
+      </div>
+      <div class="csug">${sug}</div>
+      <button class="quizbtn" id="countQuiz">¿Cuánto va?</button>`;
+    const q = $('countQuiz');
+    if (q) q.addEventListener('click', () => {
+      const ans = prompt('¿Cuál es el CONTEO CORRIDO ahora mismo?\n(Suma +1 por cada 2-6, -1 por cada 10/figura/As, 0 por 7-9.)');
+      if (ans === null) return;
+      const n = parseInt(ans, 10);
+      const real = game.getCount().running;
+      if (n === real) alert('✅ ¡Correcto! El conteo corrido es ' + (real > 0 ? '+' : '') + real + '.');
+      else alert('❌ Casi. El conteo corrido real es ' + (real > 0 ? '+' : '') + real + '. Tú dijiste ' + n + '.\nRecuerda: bajas +1, altas -1, medias 0.');
+    });
+  }
+
   let currentAdviceBeforeAction = null;
   function captureAdvice() {
     currentAdviceBeforeAction = (game.state === 'playerTurn' && !game.canOfferInsurance) ? currentAdvice() : null;
@@ -181,6 +233,11 @@
     sw.innerHTML = `<input type="checkbox" id="coachToggle" ${coachOn ? 'checked' : ''}/> Modo entrenador (consejos de estrategia)`;
     controls.appendChild(sw);
 
+    const sw2 = document.createElement('label');
+    sw2.className = 'switch';
+    sw2.innerHTML = `<input type="checkbox" id="countToggle" ${countOn ? 'checked' : ''}/> Practicar conteo de cartas (Hi-Lo)`;
+    controls.appendChild(sw2);
+
     area.querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => {
       const v = parseInt(c.dataset.v, 10);
       if (pendingBet + v <= game.bankroll) { pendingBet += v; $('betValue').textContent = '$' + pendingBet; updateDeal(); }
@@ -201,6 +258,11 @@
     $('coachToggle').addEventListener('change', (e) => {
       coachOn = e.target.checked;
       try { localStorage.setItem('coach', coachOn ? 'on' : 'off'); } catch (err) {}
+    });
+    $('countToggle').addEventListener('change', (e) => {
+      countOn = e.target.checked;
+      try { localStorage.setItem('count', countOn ? 'on' : 'off'); } catch (err) {}
+      renderCountHud();
     });
     updateDeal();
     function updateDeal() { $('dealBtn').disabled = pendingBet < game.minBet; }
@@ -290,7 +352,7 @@
 
   function updateBankroll() { $('bankrollValue').textContent = Math.floor(game.bankroll); }
 
-  function renderTableOnly() { renderDealer(); renderPlayer(); }
+  function renderTableOnly() { renderDealer(); renderPlayer(); renderCountHud(); }
 
   function render() {
     renderTableOnly();
@@ -310,6 +372,7 @@
   $('btnHelp').addEventListener('click', () => openModal(HELP_HTML));
   $('btnStats').addEventListener('click', () => openModal(statsHTML()));
   $('btnChart').addEventListener('click', () => openModal(CHART_HTML));
+  $('btnCount').addEventListener('click', () => openModal(COUNT_HTML));
 
   function statsHTML() {
     const s = game.stats;
@@ -361,6 +424,45 @@
     <h3>Modo entrenador</h3>
     <p>Con el entrenador activado, antes de cada jugada verás la <b>jugada óptima</b> según la estrategia básica y una explicación. Si te equivocas, te lo indica. Revisa 📋 para ver la tabla completa y 📊 para tu precisión.</p>
     <p style="opacity:.8">Consejo pro: instala la app tocando <b>Compartir → Añadir a pantalla de inicio</b> para jugarla como app nativa y sin conexión.</p>
+  `;
+
+  const COUNT_HTML = `
+    <h2>🔢 Cómo se cuentan las cartas</h2>
+    <p>Contar cartas <b>no es memorizar</b> las cartas que salieron. Es llevar <b>un solo número</b> que te dice si en el zapato quedan más cartas <b>altas</b> (buenas para ti) o <b>bajas</b> (buenas para la casa). Es legal; solo que a los casinos no les gusta.</p>
+
+    <h3>1) El sistema Hi-Lo</h3>
+    <p>A cada carta que ves salir le sumas o le restas un punto:</p>
+    <div class="hilo">
+      <div class="grp low"><div class="cards2">2 3 4 5 6</div><div class="val">+1</div><div style="font-size:11px;opacity:.8">cartas bajas</div></div>
+      <div class="grp mid"><div class="cards2">7 8 9</div><div class="val">0</div><div style="font-size:11px;opacity:.8">neutras</div></div>
+      <div class="grp high"><div class="cards2">10 J Q K A</div><div class="val">−1</div><div style="font-size:11px;opacity:.8">cartas altas</div></div>
+    </div>
+    <p><b>¿Por qué?</b> Cuando quedan muchas cartas altas (dieces y ases), tú sacas más blackjacks (que pagan 3:2) y la casa se pasa más seguido. Cuando salen las altas, el conteo baja; cuando salen las bajas, sube.</p>
+
+    <h3>2) Conteo corrido</h3>
+    <p>Empiezas en <b>0</b> al barajar y vas sumando cada carta. Ejemplo con estas cartas en la mesa:</p>
+    <p style="background:rgba(0,0,0,.3);padding:8px;border-radius:8px">
+      Rey (−1) · 5 (+1) · 3 (+1) · 10 (−1) · 6 (+1) &nbsp;→&nbsp; <b>conteo corrido = +1</b>
+    </p>
+
+    <h3>3) Conteo verdadero (el importante)</h3>
+    <p>El conteo corrido hay que ajustarlo por las barajas que faltan, porque un +5 con 6 barajas por salir vale poco, pero un +5 con 1 baraja por salir es enorme:</p>
+    <p style="text-align:center;font-size:16px;background:rgba(0,0,0,.3);padding:8px;border-radius:8px">
+      <b>Conteo verdadero = conteo corrido ÷ barajas restantes</b>
+    </p>
+    <p>Ejemplo: conteo corrido +6 y quedan 3 barajas → 6 ÷ 3 = <b>conteo verdadero +2</b>.</p>
+
+    <h3>4) Qué hacer con el conteo</h3>
+    <ul>
+      <li><b>Verdadero +2 o más:</b> la baraja te favorece → <b>apuesta más</b>.</li>
+      <li><b>Cercano a 0:</b> apuesta tu cantidad base.</li>
+      <li><b>Negativo:</b> desfavorable → <b>apuesta el mínimo</b>.</li>
+    </ul>
+    <p>La estrategia básica (📋) casi no cambia; lo que más te da ventaja es <b>subir la apuesta cuando el conteo está alto</b> y bajarla cuando está bajo.</p>
+
+    <h3>5) Practícalo aquí</h3>
+    <p>Activa <b>«Practicar conteo de cartas»</b> en la pantalla de apuestas. Aparecerá un panel en vivo con el conteo corrido, el verdadero y las barajas restantes, y un botón <b>«¿Cuánto va?»</b> para que adivines el conteo y te autocorrija. Empieza siguiendo el panel; luego intenta contar tú y compara.</p>
+    <p style="opacity:.75;font-size:12px">Nota: contar es una habilidad de práctica. En casinos con máquinas de barajado continuo no funciona, y contar mentalmente bajo presión es difícil. Aquí es 100% para aprender.</p>
   `;
 
   const CHART_HTML = buildChartHTML();

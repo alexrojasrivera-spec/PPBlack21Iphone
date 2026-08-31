@@ -77,6 +77,23 @@ body {
   position: relative;
   min-height: 0;
 }
+/* Arco de mesa + viñeta para dar profundidad */
+.table::before {
+  content: '';
+  position: absolute; left: 50%; top: 8%;
+  width: 150%; aspect-ratio: 1;
+  transform: translateX(-50%);
+  border: 2px solid rgba(212,175,55,0.18);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.table::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(120% 90% at 50% 35%, transparent 55%, rgba(0,0,0,0.35) 100%);
+  pointer-events: none;
+}
+.dealer-zone, .player-zone, .center-msg { position: relative; z-index: 1; }
 
 .zone-label {
   font-size: 11px;
@@ -103,43 +120,98 @@ body {
 .hand.active {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px rgba(212,175,55,0.25);
+  animation: activePulse 1.6s ease-in-out infinite;
+}
+@keyframes activePulse {
+  0%,100% { box-shadow: 0 0 0 2px rgba(212,175,55,0.2); }
+  50%     { box-shadow: 0 0 14px 2px rgba(212,175,55,0.5); }
+}
+.hand.result-win {
+  border-color: var(--good);
+  animation: winGlow 1s ease-out;
+}
+@keyframes winGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(46,204,113,0.6); }
+  40%  { box-shadow: 0 0 22px 6px rgba(46,204,113,0.55); }
+  100% { box-shadow: 0 0 10px 1px rgba(46,204,113,0.25); }
+}
+.hand.result-lose { animation: shake .45s ease; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-7px) rotate(-1deg); }
+  40% { transform: translateX(6px) rotate(1deg); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
 }
 .hand .cards { display: flex; }
 
 .card {
-  width: 62px;
-  height: 88px;
-  background: var(--card-bg);
-  border-radius: 8px;
-  margin-left: -22px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  width: 64px;
+  height: 92px;
+  background:
+    radial-gradient(120% 120% at 30% 20%, #ffffff 0%, var(--card-bg) 60%, #ece9dc 100%);
+  border-radius: 9px;
+  margin-left: -24px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(0,0,0,0.06);
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 5px 6px;
-  font-weight: 700;
-  animation: deal .28s ease-out;
+  font-weight: 800;
+  will-change: transform, opacity;
+  transform-origin: bottom center;
 }
 .card:first-child { margin-left: 0; }
 .card.red { color: var(--card-red); }
 .card.black { color: var(--card-black); }
-.card .r { font-size: 17px; line-height: 1; }
-.card .s { font-size: 17px; align-self: flex-end; }
+.card .r { font-size: 17px; line-height: 1; letter-spacing: -0.5px; }
+.card .s { font-size: 16px; align-self: flex-end; }
 .card .center {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
   font-size: 30px;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,0.08));
 }
 .card.back {
-  background: repeating-linear-gradient(45deg, #7b1e2b, #7b1e2b 6px, #9b2c3a 6px, #9b2c3a 12px);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.12), rgba(0,0,0,0.12)),
+    repeating-linear-gradient(45deg, #7b1e2b, #7b1e2b 6px, #9b2c3a 6px, #9b2c3a 12px);
   border: 2px solid #f4f6f4;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+.card.back::after {
+  content: '21';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 900; color: rgba(255,255,255,0.85);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 .card.back .r, .card.back .s, .card.back .center { display: none; }
 
-@keyframes deal {
-  from { transform: translateY(-30px) rotate(-6deg); opacity: 0; }
-  to   { transform: none; opacity: 1; }
+/* Reparto: la carta entra desde el zapato (arriba a la derecha) */
+.card.deal-in {
+  animation: dealIn .42s cubic-bezier(.2,.8,.25,1) backwards;
+  animation-delay: calc(var(--i, 0) * .11s);
+}
+@keyframes dealIn {
+  0%   { transform: translate(140px, -180px) rotate(28deg) scale(.9); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: translate(0,0) rotate(0) scale(1); opacity: 1; }
+}
+
+/* Volteo de la carta oculta del crupier */
+.card.flip-in {
+  animation: flipIn .55s ease-out backwards;
+  animation-delay: .1s;
+}
+@keyframes flipIn {
+  0%   { transform: rotateY(180deg) scale(.96); }
+  100% { transform: rotateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.deal-in, .card.flip-in { animation: none; }
 }
 
 .total-badge {
@@ -283,5 +355,42 @@ body {
 .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; }
 .legend span { display: inline-flex; align-items: center; gap: 4px; }
 .legend i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+
+/* ---------- Panel de conteo en vivo ---------- */
+.count-hud {
+  display: none;
+  margin: 8px 12px 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.3));
+  border: 1px solid rgba(46,204,113,0.35);
+  border-radius: 12px;
+  padding: 8px 10px;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+.count-hud.show { display: flex; }
+.count-hud .cvals { display: flex; gap: 14px; }
+.count-hud .cv { text-align: center; line-height: 1.1; }
+.count-hud .cv b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.count-hud .cv span { font-size: 10px; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.5px; }
+.count-hud .cv.rc b { color: #7fd7ff; }
+.count-hud .cv.tc b { color: var(--good); }
+.count-hud .cv.tc.neg b { color: var(--bad); }
+.count-hud .csug { font-size: 11px; opacity: 0.85; max-width: 44%; text-align: right; }
+.count-hud .quizbtn {
+  background: rgba(46,204,113,0.2); border: 1px solid rgba(46,204,113,0.5);
+  color: #eafff2; border-radius: 8px; padding: 6px 8px; font-size: 12px; font-weight: 700;
+}
+
+/* Tabla de valores Hi-Lo en el modal */
+.hilo { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
+.hilo .grp { flex: 1; min-width: 92px; border-radius: 10px; padding: 8px; text-align: center; }
+.hilo .grp.low { background: rgba(46,204,113,0.22); border: 1px solid rgba(46,204,113,0.5); }
+.hilo .grp.mid { background: rgba(127,140,141,0.22); border: 1px solid rgba(127,140,141,0.5); }
+.hilo .grp.high { background: rgba(231,76,60,0.22); border: 1px solid rgba(231,76,60,0.5); }
+.hilo .grp .cards2 { font-size: 15px; font-weight: 800; }
+.hilo .grp .val { font-size: 22px; font-weight: 900; margin-top: 2px; }
+.hilo .grp.low .val { color: var(--good); }
+.hilo .grp.high .val { color: var(--bad); }
 
 .hidden { display: none !important; }

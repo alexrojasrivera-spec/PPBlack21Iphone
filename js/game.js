@@ -10,6 +10,16 @@ const RANKS = [
   ['7', 7], ['8', 8], ['9', 9], ['10', 10], ['J', 10], ['Q', 10], ['K', 10],
 ];
 
+// Valor Hi-Lo de una carta para el conteo:
+//  2,3,4,5,6 -> +1  (cartas bajas: buenas para la casa cuando salen)
+//  7,8,9     ->  0  (neutras)
+//  10,J,Q,K,A -> -1 (cartas altas: buenas para el jugador cuando salen)
+function hiloValue(card) {
+  if (card.rank === 'A' || card.value >= 10) return -1;
+  if (card.value >= 7) return 0;
+  return 1;
+}
+
 class Blackjack {
   constructor(opts = {}) {
     this.numDecks = opts.numDecks || 6;
@@ -50,6 +60,8 @@ class Blackjack {
     this.cutCard = Math.floor(this.shoe.length * this.penetration);
     this.dealtSinceShuffle = 0;
     this.needsShuffle = false;
+    this.runningCount = 0;      // conteo corrido (Hi-Lo)
+    this.justShuffled = true;   // aviso para la interfaz
   }
 
   shuffle() {
@@ -59,11 +71,35 @@ class Blackjack {
     }
   }
 
-  draw() {
+  // countIt=false para la carta tapada del crupier: no se cuenta hasta verse.
+  draw(countIt = true) {
     if (this.shoe.length === 0) this.buildShoe();
     this.dealtSinceShuffle++;
     if (this.dealtSinceShuffle >= this.cutCard) this.needsShuffle = true;
-    return this.shoe.pop();
+    const card = this.shoe.pop();
+    if (countIt) this.runningCount += hiloValue(card);
+    return card;
+  }
+
+  // Estado del conteo Hi-Lo.
+  getCount() {
+    const cardsLeft = this.shoe.length;
+    const decksLeft = Math.max(cardsLeft / 52, 0.25);
+    const trueCount = this.runningCount / decksLeft;
+    return {
+      running: this.runningCount,
+      cardsLeft,
+      decksLeft,
+      trueCount,
+      trueRounded: Math.round(trueCount),
+    };
+  }
+
+  // Sugerencia de apuesta (en unidades) según el conteo verdadero.
+  // Regla sencilla: apuesta (conteo verdadero - 1) unidades, mínimo 1.
+  betUnitsFor(trueRounded) {
+    if (trueRounded <= 1) return 1;
+    return Math.min(trueRounded - 1, 8);
   }
 
   // ---- Flujo del juego ----
@@ -79,7 +115,7 @@ class Blackjack {
   }
 
   deal() {
-    this.dealer = { cards: [this.draw()], hiddenCard: this.draw(), hidden: true };
+    this.dealer = { cards: [this.draw()], hiddenCard: this.draw(false), hidden: true };
     this.hands = [{ cards: [this.draw(), this.draw()], bet: this.bet, done: false, doubled: false, split: false, fromSplitAces: false }];
     this.activeHand = 0;
     this.insurance = 0;
@@ -198,6 +234,7 @@ class Blackjack {
 
   revealAndSettle() {
     this.dealer.cards.push(this.dealer.hiddenCard);
+    this.runningCount += hiloValue(this.dealer.hiddenCard); // ahora sí se cuenta
     this.dealer.hidden = false;
     this.state = 'dealerTurn';
 

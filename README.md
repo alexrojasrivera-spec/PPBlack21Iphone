@@ -47,6 +47,21 @@ python3 -m http.server 8000
   reducir la ventaja de la casa a ~0.5 %.
 - **❓ Ayuda**: reglas y cómo se juega.
 
+## 🔢 Conteo de cartas (Hi-Lo) explicado
+- **🔢 Guía completa** paso a paso: valores Hi-Lo, conteo corrido, conteo
+  verdadero (÷ barajas restantes) y cómo ajustar tu apuesta.
+- **Práctica en vivo:** activa *«Practicar conteo»* y verás un panel con el
+  conteo corrido, el verdadero y las barajas restantes que se actualiza carta
+  a carta. La carta tapada del crupier solo se cuenta al voltearse, como en la
+  realidad.
+- Botón **«¿Cuánto va?»** para adivinar el conteo y autocorregirte.
+
+## ✨ Animaciones
+- Reparto de cartas desde el zapato con entrada escalonada.
+- Volteo 3D de la carta oculta del crupier al revelarse.
+- Brillo al ganar, temblor al perder y pulso en la mano activa.
+- Respeta *reduce motion* del sistema para accesibilidad.
+
 ## 🗂 Estructura
 ```
 index.html              Página principal
