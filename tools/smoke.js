@@ -1,4 +1,4 @@
-// Prueba visual del tutorial interactivo y del juego.
+// Prueba visual: verifica el zapato bajando tras jugar varias manos.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -16,6 +16,22 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(file).pipe(res);
 });
 
+async function playRound(page) {
+  await page.click('.chip.c25');
+  await page.click('#dealBtn');
+  await page.waitForTimeout(300);
+  // planta o siguiente hasta terminar la mano
+  let g = 0;
+  while (g++ < 12) {
+    const stand = await page.$('#standBtn');
+    const next = await page.$('#nextBtn');
+    if (next) { await next.click(); await page.waitForTimeout(150); return; }
+    if (stand) { await stand.click(); await page.waitForTimeout(200); continue; }
+    const ins = await page.$('#noIns'); if (ins) { await ins.click(); continue; }
+    await page.waitForTimeout(120);
+  }
+}
+
 (async () => {
   await new Promise((r) => server.listen(4173, r));
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
@@ -27,50 +43,22 @@ const server = http.createServer((req, res) => {
 
   await page.goto('http://localhost:4173/index.html', { waitUntil: 'networkidle' });
   await page.waitForTimeout(200);
+  await page.click('#countToggle');
 
-  // Abrir guía de conteo y lanzar tutorial
-  await page.click('#btnCount');
-  await page.waitForTimeout(150);
-  await page.click('.tut-launch');
-  await page.waitForTimeout(200);
-  await page.screenshot({ path: path.join(ROOT, 'tools/t1-intro.png') });
+  const before = await page.$eval('#shoeDecks', (e) => e.textContent);
+  const fillBefore = await page.$eval('#shoeFill', (e) => e.style.height);
 
-  // Avanzar 2 pasos info hasta la primera pregunta de valor
-  await page.click('#tutNext'); await page.waitForTimeout(120);
-  await page.click('#tutNext'); await page.waitForTimeout(120);
-  await page.screenshot({ path: path.join(ROOT, 'tools/t2-value.png') });
+  // Juega 10 manos
+  for (let i = 0; i < 10; i++) await playRound(page);
 
-  // Responder la pregunta de valor (elige primera opción) y ver feedback
-  await page.click('.tut-opt'); await page.waitForTimeout(150);
-  await page.screenshot({ path: path.join(ROOT, 'tools/t3-feedback.png') });
-
-  // Recorrer TODO el tutorial hasta el final para detectar errores.
-  let guard = 0;
-  while (guard++ < 60) {
-    const next = await page.$('#tutNext');
-    if (!next) break;
-    const disabled = await next.isDisabled();
-    if (disabled) {
-      // hay que interactuar: intenta la primera opción, luego inline, luego comprobar
-      const opt = await page.$('.tut-opt:not([disabled])');
-      const inline = await page.$('.tut-inline');
-      if (opt) { await opt.click(); await page.waitForTimeout(80); continue; }
-      if (inline) { await inline.click(); await page.waitForTimeout(80); continue; }
-      // stepper: sólo comprobar
-      const check = await page.$('.tut-inline');
-      if (check) { await check.click(); await page.waitForTimeout(80); continue; }
-      break;
-    }
-    const label = await next.textContent();
-    if (label && label.includes('Practicar')) { await next.click(); break; }
-    await next.click();
-    await page.waitForTimeout(90);
-  }
-  await page.waitForTimeout(200);
-  await page.screenshot({ path: path.join(ROOT, 'tools/t4-end.png') });
+  const after = await page.$eval('#shoeDecks', (e) => e.textContent);
+  const fillAfter = await page.$eval('#shoeFill', (e) => e.style.height);
+  const cut = await page.$eval('#shoeCut', (e) => e.style.bottom);
+  await page.screenshot({ path: path.join(ROOT, 'tools/shoe.png') });
 
   console.log('Errores de consola:', errors.length ? errors : 'ninguno');
-  console.log('Iteraciones para completar:', guard);
+  console.log('Barajas antes:', before, '-> después de 10 manos:', after);
+  console.log('Altura fill antes:', fillBefore, '-> después:', fillAfter, ' | carta de corte en bottom:', cut);
   await browser.close();
   server.close();
 })().catch((e) => { console.error('FALLO:', e); process.exit(1); });

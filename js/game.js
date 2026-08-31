@@ -95,6 +95,20 @@ class Blackjack {
     };
   }
 
+  // Estado físico del zapato (para mostrarlo visualmente).
+  getShoe() {
+    const total = this.numDecks * 52;
+    const remaining = this.shoe.length;
+    return {
+      total,
+      remaining,
+      dealt: total - remaining,
+      decksLeft: remaining / 52,
+      remainFrac: remaining / total,
+      cutFrac: (total - this.cutCard) / total, // altura de la carta de corte
+    };
+  }
+
   // Sugerencia de apuesta (en unidades) según el conteo verdadero.
   // Regla sencilla: apuesta (conteo verdadero - 1) unidades, mínimo 1.
   betUnitsFor(trueRounded) {

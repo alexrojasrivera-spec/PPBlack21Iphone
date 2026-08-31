@@ -1,5 +1,5 @@
 // Service Worker — permite usar la app sin conexión (offline-first).
-const CACHE = 'black21-v2';
+const CACHE = 'black21-v3';
 const ASSETS = [
   './',
   './index.html',

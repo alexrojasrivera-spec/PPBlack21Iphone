@@ -352,7 +352,14 @@
 
   function updateBankroll() { $('bankrollValue').textContent = Math.floor(game.bankroll); }
 
-  function renderTableOnly() { renderDealer(); renderPlayer(); renderCountHud(); }
+  function renderShoe() {
+    const info = game.getShoe();
+    $('shoeFill').style.height = (info.remainFrac * 100).toFixed(1) + '%';
+    $('shoeCut').style.bottom = (info.cutFrac * 100).toFixed(1) + '%';
+    $('shoeDecks').textContent = info.decksLeft.toFixed(1);
+  }
+
+  function renderTableOnly() { renderShoe(); renderDealer(); renderPlayer(); renderCountHud(); }
 
   function render() {
     renderTableOnly();
@@ -462,7 +469,11 @@
     </ul>
     <p>La estrategia básica (📋) casi no cambia; lo que más te da ventaja es <b>subir la apuesta cuando el conteo está alto</b> y bajarla cuando está bajo.</p>
 
-    <h3>5) Practícalo aquí</h3>
+    <h3>5) El zapato y la carta de corte</h3>
+    <p>Arriba a la derecha de la mesa verás el <b>zapato</b>: una barra que <b>baja</b> a medida que se reparten cartas, con el número de <b>barajas que faltan</b>. Esas barajas son las que usas para el conteo verdadero.</p>
+    <p>La <b>línea roja</b> es la <b>carta de corte</b>: cuando el reparto llega ahí, se <b>rebaraja</b> y el conteo vuelve a 0. Por eso, mientras más cerca del corte y más alto el conteo, más te conviene apostar fuerte.</p>
+
+    <h3>6) Practícalo aquí</h3>
     <p>Activa <b>«Practicar conteo de cartas»</b> en la pantalla de apuestas. Aparecerá un panel en vivo con el conteo corrido, el verdadero y las barajas restantes, y un botón <b>«¿Cuánto va?»</b> para que adivines el conteo y te autocorrija. Empieza siguiendo el panel; luego intenta contar tú y compara.</p>
     <p style="opacity:.75;font-size:12px">Nota: contar es una habilidad de práctica. En casinos con máquinas de barajado continuo no funciona, y contar mentalmente bajo presión es difícil. Aquí es 100% para aprender.</p>
   `;
