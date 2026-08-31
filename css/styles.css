@@ -393,4 +393,96 @@ body {
 .hilo .grp.low .val { color: var(--good); }
 .hilo .grp.high .val { color: var(--bad); }
 
+/* ---------- Tutorial interactivo ---------- */
+.tut-overlay {
+  position: fixed; inset: 0; z-index: 80;
+  background: linear-gradient(180deg, #0b3a26, #06231a);
+  display: none;
+}
+.tut-overlay.show { display: block; }
+.tut {
+  height: 100dvh;
+  display: flex; flex-direction: column;
+  max-width: 560px; margin: 0 auto;
+}
+.tut-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(10px + var(--safe-top)) 14px 6px;
+}
+.tut-prog { flex: 1; height: 8px; background: rgba(255,255,255,0.12); border-radius: 999px; overflow: hidden; }
+.tut-prog-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--good), var(--gold)); transition: width .3s ease; }
+.tut-close { background: rgba(255,255,255,0.1); border: none; color: var(--text); width: 34px; height: 34px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+
+.tut-body { flex: 1; overflow-y: auto; padding: 8px 18px 18px; -webkit-overflow-scrolling: touch; }
+.tut-title { color: var(--gold); font-size: 21px; margin: 6px 0 12px; }
+.tut-body p { font-size: 15px; line-height: 1.5; }
+.tut-body ul { font-size: 15px; line-height: 1.55; padding-left: 20px; }
+
+.tut-foot { display: flex; gap: 10px; padding: 10px 18px calc(14px + var(--safe-bottom)); }
+.tut-btn { flex: 1; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 800; cursor: pointer; }
+.tut-btn.primary { background: linear-gradient(#37d67a, #1e9e57); color: #06231a; }
+.tut-btn.primary:disabled { opacity: 0.4; filter: grayscale(0.6); pointer-events: none; }
+.tut-btn.ghost { background: rgba(255,255,255,0.08); color: var(--text); flex: 0 0 90px; }
+.tut-btn.tut-inline { flex: none; margin-top: 12px; padding: 12px 20px; }
+
+.tut-stage { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 14px 0; }
+.tut-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 14px 0; }
+.tut-mini { font-size: 13px; opacity: 0.85; text-align: center; }
+.tut-total { text-align: center; font-size: 16px; margin: 6px 0 2px; }
+.tut-total b { color: var(--good); font-size: 26px; font-variant-numeric: tabular-nums; }
+
+/* Cartas del tutorial */
+.tcard {
+  width: 74px; height: 104px; border-radius: 10px;
+  background: radial-gradient(120% 120% at 30% 20%, #fff 0%, var(--card-bg) 60%, #ece9dc 100%);
+  box-shadow: 0 5px 12px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(0,0,0,0.06);
+  position: relative; padding: 6px 8px; font-weight: 800;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.tcard.red { color: var(--card-red); }
+.tcard.black { color: var(--card-black); }
+.tcard .r { font-size: 20px; }
+.tcard .s { font-size: 18px; align-self: flex-end; }
+.tcard .c { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 36px; }
+.tcard.back {
+  background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(0,0,0,0.12)), repeating-linear-gradient(45deg, #7b1e2b, #7b1e2b 6px, #9b2c3a 6px, #9b2c3a 12px);
+  border: 2px solid #f4f6f4;
+}
+.tcard.back .r, .tcard.back .s, .tcard.back .c { display: none; }
+.tcard.flip { animation: flipIn .5s ease-out; }
+
+/* Opciones de respuesta */
+.tut-opts { display: flex; gap: 10px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
+.tut-opts.col { flex-direction: column; align-items: stretch; }
+.tut-opt {
+  min-width: 78px; padding: 16px 10px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.06); color: var(--text); font-size: 20px; font-weight: 800; cursor: pointer;
+}
+.tut-opt.wide { width: 100%; font-size: 17px; }
+.tut-opt.low { border-color: rgba(46,204,113,0.6); }
+.tut-opt.mid { border-color: rgba(127,140,141,0.6); }
+.tut-opt.high { border-color: rgba(231,76,60,0.6); }
+.tut-opt:disabled { opacity: 0.55; }
+.tut-opt.picked { outline: 3px solid var(--gold); opacity: 1; }
+
+.tut-fb { margin: 14px 0 0; padding: 0; font-size: 14.5px; line-height: 1.45; max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+.tut-fb.show { max-height: 220px; padding: 12px; border-radius: 10px; }
+.tut-fb.ok { background: rgba(46,204,113,0.16); border: 1px solid rgba(46,204,113,0.5); }
+.tut-fb.no { background: rgba(231,76,60,0.16); border: 1px solid rgba(231,76,60,0.5); }
+
+.tut-stepper { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 14px 0; }
+.st-btn { width: 54px; height: 54px; border-radius: 50%; border: none; background: rgba(255,255,255,0.12); color: var(--text); font-size: 26px; font-weight: 800; cursor: pointer; }
+.st-btn:active { background: rgba(255,255,255,0.22); }
+.st-val { font-size: 34px; font-weight: 900; min-width: 72px; text-align: center; color: var(--gold); font-variant-numeric: tabular-nums; }
+
+/* Reutiliza estilos Hi-Lo del modal dentro del tutorial */
+.tut-body .hilo .grp .lbl { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+
+/* Botón para lanzar el tutorial dentro del modal de referencia */
+.tut-launch {
+  display: block; width: 100%; margin: 4px 0 14px; padding: 15px;
+  border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer;
+  background: linear-gradient(#37d67a, #1e9e57); color: #06231a;
+}
+
 .hidden { display: none !important; }

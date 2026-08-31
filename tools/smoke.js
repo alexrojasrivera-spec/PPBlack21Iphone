@@ -1,5 +1,4 @@
-// Prueba visual: sirve la carpeta, abre la app en iPhone viewport,
-// activa el conteo, juega y toma capturas.
+// Prueba visual del tutorial interactivo y del juego.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -25,29 +24,53 @@ const server = http.createServer((req, res) => {
   const errors = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message));
-  page.on('dialog', (d) => d.dismiss().catch(() => {}));
 
   await page.goto('http://localhost:4173/index.html', { waitUntil: 'networkidle' });
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(200);
 
-  // Activar conteo, apostar y repartir
-  await page.click('#countToggle');
-  await page.click('.chip.c25');
-  await page.click('#dealBtn');
-  await page.waitForTimeout(700);
-  await page.screenshot({ path: path.join(ROOT, 'tools/shot-play.png') });
-
-  // Pedir una carta para ver animación + conteo actualizado
-  const hitBtn = await page.$('#hitBtn');
-  if (hitBtn) { await hitBtn.click(); await page.waitForTimeout(600); }
-  await page.screenshot({ path: path.join(ROOT, 'tools/shot-hit.png') });
-
-  // Modal de conteo
+  // Abrir guía de conteo y lanzar tutorial
   await page.click('#btnCount');
-  await page.waitForTimeout(250);
-  await page.screenshot({ path: path.join(ROOT, 'tools/shot-count.png') });
+  await page.waitForTimeout(150);
+  await page.click('.tut-launch');
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: path.join(ROOT, 'tools/t1-intro.png') });
+
+  // Avanzar 2 pasos info hasta la primera pregunta de valor
+  await page.click('#tutNext'); await page.waitForTimeout(120);
+  await page.click('#tutNext'); await page.waitForTimeout(120);
+  await page.screenshot({ path: path.join(ROOT, 'tools/t2-value.png') });
+
+  // Responder la pregunta de valor (elige primera opción) y ver feedback
+  await page.click('.tut-opt'); await page.waitForTimeout(150);
+  await page.screenshot({ path: path.join(ROOT, 'tools/t3-feedback.png') });
+
+  // Recorrer TODO el tutorial hasta el final para detectar errores.
+  let guard = 0;
+  while (guard++ < 60) {
+    const next = await page.$('#tutNext');
+    if (!next) break;
+    const disabled = await next.isDisabled();
+    if (disabled) {
+      // hay que interactuar: intenta la primera opción, luego inline, luego comprobar
+      const opt = await page.$('.tut-opt:not([disabled])');
+      const inline = await page.$('.tut-inline');
+      if (opt) { await opt.click(); await page.waitForTimeout(80); continue; }
+      if (inline) { await inline.click(); await page.waitForTimeout(80); continue; }
+      // stepper: sólo comprobar
+      const check = await page.$('.tut-inline');
+      if (check) { await check.click(); await page.waitForTimeout(80); continue; }
+      break;
+    }
+    const label = await next.textContent();
+    if (label && label.includes('Practicar')) { await next.click(); break; }
+    await next.click();
+    await page.waitForTimeout(90);
+  }
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: path.join(ROOT, 'tools/t4-end.png') });
 
   console.log('Errores de consola:', errors.length ? errors : 'ninguno');
+  console.log('Iteraciones para completar:', guard);
   await browser.close();
   server.close();
 })().catch((e) => { console.error('FALLO:', e); process.exit(1); });

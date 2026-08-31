@@ -428,6 +428,8 @@
 
   const COUNT_HTML = `
     <h2>🔢 Cómo se cuentan las cartas</h2>
+    <button class="tut-launch" onclick="Tutorial.open()">▶ Empezar tutorial interactivo</button>
+    <p style="opacity:.8;font-size:13px;margin-top:-6px">Aprende practicando: cartas reales, tú respondes y te corrige al instante. Abajo tienes la guía de referencia.</p>
     <p>Contar cartas <b>no es memorizar</b> las cartas que salieron. Es llevar <b>un solo número</b> que te dice si en el zapato quedan más cartas <b>altas</b> (buenas para ti) o <b>bajas</b> (buenas para la casa). Es legal; solo que a los casinos no les gusta.</p>
 
     <h3>1) El sistema Hi-Lo</h3>
@@ -518,6 +520,16 @@
       <p style="opacity:.75;font-size:12px">Si no puedes doblar (más de 2 cartas), pide en su lugar. Si no puedes dividir, juega el total normal.</p>
     `;
   }
+
+  // Activa la práctica de conteo (la llama el tutorial al terminar)
+  window.enableCountPractice = function () {
+    countOn = true;
+    try { localStorage.setItem('count', 'on'); } catch (e) {}
+    const t = $('countToggle');
+    if (t) t.checked = true;
+    renderCountHud();
+    centerMsg.textContent = '¡Panel de conteo activado! Juega una mano y practica.';
+  };
 
   // ---------- Arranque ----------
   render();
